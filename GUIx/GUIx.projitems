@@ -9,5 +9,6 @@
     <Import_RootNamespace>GUIx</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)GUIx.cs" />
   </ItemGroup>
 </Project>

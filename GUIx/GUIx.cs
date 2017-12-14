@@ -5,9 +5,138 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace GUIx {
-    //public class SpinBox : Control...
+    public class SpinBox : Grid {
+        public readonly TextBox textBox;
+        public readonly ScrollBar scrollBar;
+
+        public SpinBox() {
+            this.RowDefinitions.Add(new RowDefinition());
+            this.ColumnDefinitions.Add(new ColumnDefinition());
+            this.textBox = new TextBox();
+            this.textBox.Text = "0";
+            this.textBox.TextChanged += this.handleTextChange;
+            this.textBox.PreviewTextInput += this.handleInput;
+            Grid.SetRow(this.textBox, 0);
+            Grid.SetColumn(this.textBox, 0);
+            this.Children.Add(this.textBox);
+            ColumnDefinition cd = new ColumnDefinition();
+            cd.Width = GridLength.Auto;
+            this.ColumnDefinitions.Add(cd);
+            this.scrollBar = new ScrollBar();
+            this.scrollBar.Minimum = double.MinValue;
+            this.scrollBar.Maximum = double.MaxValue;
+            this.scrollBar.SmallChange = 1;
+            this.scrollBar.Value = 0;
+            this.scrollBar.ValueChanged += this.handleScroll;
+            Grid.SetRow(this.scrollBar, 0);
+            Grid.SetColumn(this.scrollBar, 1);
+            this.Children.Add(this.scrollBar);
+        }
+
+        // handlers
+        public void handleTextChange(object sender, TextChangedEventArgs e) {
+            double newValue;
+            if (!double.TryParse(this.textBox.Text, out newValue)) {
+                this.textBox.Text = "" + this.Value;
+                return;
+            }
+            if (newValue == this.Value) { return; }
+            this.Value = newValue;
+        }
+
+        public void handleInput(object sender, TextCompositionEventArgs e) {
+            StringBuilder s = new StringBuilder(this.textBox.Text);
+            s.Remove(this.textBox.SelectionStart, this.textBox.SelectionLength);
+            s.Insert(this.textBox.SelectionStart, e.Text);
+            double newValue;
+            if (!double.TryParse(s.ToString(), out newValue)) {
+                e.Handled = true;
+                return;
+            }
+        }
+
+        public void handleScroll(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            String newText = "" + this.Value;
+            if (this.textBox.Text == newText) { return; }
+            this.textBox.Text = newText;
+        }
+
+        // property delegates
+        public int CaretIndex {
+            get { return this.textBox.CaretIndex; }
+            set { this.textBox.CaretIndex = value; }
+        }
+
+        public String SelectedText {
+            get { return this.textBox.SelectedText; }
+            set { this.textBox.SelectedText = value; }
+        }
+
+        public int SelectionLength {
+            get { return this.textBox.SelectionLength; }
+            set { this.textBox.SelectionLength = value; }
+        }
+
+        public int SelectionStart {
+            get { return this.textBox.SelectionStart; }
+            set { this.textBox.SelectionStart = value; }
+        }
+
+        public String Text {
+            get { return this.textBox.Text; }
+            set { this.textBox.Text = value; }
+        }
+
+        public double Maximum {
+            get { return -this.scrollBar.Minimum; }
+            set { this.scrollBar.Minimum = -value; }
+        }
+
+        public double Minimum {
+            get { return -this.scrollBar.Maximum; }
+            set { this.scrollBar.Maximum = -value; }
+        }
+
+        public double SmallChange {
+            get { return this.scrollBar.SmallChange; }
+            set { this.scrollBar.SmallChange = value; }
+        }
+
+        public double Value {
+            get { return -this.scrollBar.Value; }
+            set { this.scrollBar.Value = -value; }
+        }
+
+        // handler delegates
+        public new event KeyEventHandler KeyDown {
+            add { this.textBox.KeyDown += value; }
+            remove { this.textBox.KeyDown -= value; }
+        }
+
+        public new event KeyEventHandler KeyUp {
+            add { this.textBox.KeyUp += value; }
+            remove { this.textBox.KeyUp -= value; }
+        }
+
+        public new event KeyboardFocusChangedEventHandler LostKeyboardFocus {
+            add { this.textBox.LostKeyboardFocus += value; }
+            remove { this.textBox.LostKeyboardFocus -= value; }
+        }
+
+        public event TextChangedEventHandler TextChanged {
+            add { this.textBox.TextChanged += value; }
+            remove { this.textBox.TextChanged -= value; }
+        }
+
+        public event RoutedPropertyChangedEventHandler<double> ValueChanged {
+            add { this.scrollBar.ValueChanged += value; }
+            remove { this.scrollBar.ValueChanged -= value; }
+        }
+    }
 
     class StringDialogWindow : Window {
         public String value = null;

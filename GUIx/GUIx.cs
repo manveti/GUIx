@@ -40,6 +40,7 @@ namespace GUIx {
         // handlers
         public void handleTextChange(object sender, TextChangedEventArgs e) {
             double newValue;
+            if (this.textBox.Text == "-") { return; }
             if (!double.TryParse(this.textBox.Text, out newValue)) {
                 this.textBox.Text = "" + this.Value;
                 return;
@@ -53,6 +54,7 @@ namespace GUIx {
             s.Remove(this.textBox.SelectionStart, this.textBox.SelectionLength);
             s.Insert(this.textBox.SelectionStart, e.Text);
             double newValue;
+            if ((this.Minimum < 0) && (s.ToString() == "-")) { return; }
             if (!double.TryParse(s.ToString(), out newValue)) {
                 e.Handled = true;
                 return;

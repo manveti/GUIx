@@ -140,33 +140,125 @@ namespace GUIx {
         }
     }
 
-    class StringDialogWindow : Window {
-        public String value = null;
 
-        private TextBox valBox;
+    public enum QueryType {
+        STRING,
+        BOOL,
+        INT,
+        FLOAT,
+        LIST
+    }
 
-        public StringDialogWindow(String title, String prompt, String value = "") {
+    public class QueryPrompt {
+        public String prompt;
+        public QueryType type;
+        public object value;
+        public double min, max, step;
+        public String[] values;
+        public bool canEdit;
+
+        public QueryPrompt(String prompt, QueryType type, object value = null, double min = double.MinValue, double max = double.MaxValue, double step = 1,
+                            String[] values = null, bool canEdit = false) {
+            this.prompt = prompt;
+            this.type = type;
+            this.value = value;
+            this.min = min;
+            this.max = max;
+            this.step = step;
+            this.values = values;
+            this.canEdit = canEdit;
+        }
+    }
+
+    class QueryBox {
+        public QueryType type;
+        public UIElement box;
+
+        public QueryBox(QueryPrompt prompt) {
+            this.type = prompt.type;
+            switch (this.type) {
+            case QueryType.STRING:
+                box = new TextBox();
+                ((TextBox)box).MinWidth = 100;
+                if (prompt.value != null) {
+                    ((TextBox)box).Text = (String)(prompt.value);
+                }
+                break;
+            case QueryType.BOOL:
+                box = new CheckBox();
+                if (prompt.value != null) {
+                    ((CheckBox)box).IsChecked = (bool)(prompt.value);
+                }
+                break;
+            case QueryType.INT:
+                if (prompt.min < int.MinValue) { prompt.min = int.MinValue; }
+                if (prompt.max > int.MaxValue) { prompt.max = int.MaxValue; }
+                goto case QueryType.FLOAT; // numeric types use the same UI element; fall through to FLOAT
+            case QueryType.FLOAT:
+                box = new SpinBox();
+                ((SpinBox)box).MinWidth = 100;
+                ((SpinBox)box).Minimum = prompt.min;
+                ((SpinBox)box).Maximum = prompt.max;
+                ((SpinBox)box).SmallChange = prompt.step;
+                if (prompt.value != null) {
+                    ((SpinBox)box).Value = (double)(prompt.value);
+                }
+                break;
+            case QueryType.LIST:
+                box = new ComboBox();
+                ((ComboBox)box).MinWidth = 100;
+                ((ComboBox)box).IsEditable = prompt.canEdit;
+                bool gotValue = false;
+                for (int i = 0; i < prompt.values.Length; i++) {
+                    ((ComboBox)box).Items.Add(prompt.values[i]);
+                    if (prompt.values[i] == (String)(prompt.value)) {
+                        gotValue = true;
+                    }
+                }
+                if ((gotValue) && (prompt.value != null)) {
+                    ((ComboBox)box).Text = (String)(prompt.value);
+                }
+                else if (prompt.values.Length > 0) {
+                    ((ComboBox)box).Text = prompt.values[0];
+                }
+                break;
+            }
+        }
+
+        public object getValue() {
+            switch (this.type) {
+            case QueryType.STRING:
+                return ((TextBox)box).Text;
+            case QueryType.BOOL:
+                return ((CheckBox)box).IsChecked;
+            case QueryType.INT:
+            case QueryType.FLOAT:
+                return ((SpinBox)box).Value;
+            case QueryType.LIST:
+                return ((ComboBox)box).Text;
+            }
+            return null;
+        }
+    }
+
+    abstract class QueryDialogBase : Window {
+        protected Grid queryGrid;
+        public bool valid;
+
+        public QueryDialogBase(String title) {
+            this.valid = false;
+            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             this.SizeToContent = SizeToContent.WidthAndHeight;
             this.Title = title;
             Grid g = new Grid();
             g.ColumnDefinitions.Add(new ColumnDefinition());
-            g.ColumnDefinitions.Add(new ColumnDefinition());
             RowDefinition rd = new RowDefinition();
             rd.Height = GridLength.Auto;
             g.RowDefinitions.Add(rd);
-            Label promptBox = new Label();
-            promptBox.Content = prompt;
-            Grid.SetRow(promptBox, 0);
-            Grid.SetColumn(promptBox, 0);
-            g.Children.Add(promptBox);
-            this.valBox = new TextBox();
-            this.valBox.Width = 100;
-            if (value != null) {
-                this.valBox.Text = value;
-            }
-            Grid.SetRow(this.valBox, 0);
-            Grid.SetColumn(this.valBox, 1);
-            g.Children.Add(this.valBox);
+            this.queryGrid = new Grid();
+            Grid.SetRow(this.queryGrid, 0);
+            Grid.SetColumn(this.queryGrid, 0);
+            g.Children.Add(this.queryGrid);
             rd = new RowDefinition();
             rd.Height = GridLength.Auto;
             g.RowDefinitions.Add(rd);
@@ -189,182 +281,107 @@ namespace GUIx {
             butGrid.Children.Add(cancelBut);
             Grid.SetRow(butGrid, 1);
             Grid.SetColumn(butGrid, 0);
-            Grid.SetColumnSpan(butGrid, 2);
             g.Children.Add(butGrid);
             this.Content = g;
-            this.Loaded += this.onLoad;
         }
 
         private void doOk(object sender, RoutedEventArgs e) {
-            this.value = this.valBox.Text;
+            this.valid = true;
             this.Close();
         }
 
         private void doCancel(object sender, RoutedEventArgs e) {
             this.Close();
         }
+    }
+
+    class QueryDialogWindow : QueryDialogBase {
+        protected QueryBox[] boxes;
+
+        public QueryDialogWindow(String title, QueryPrompt[] prompts) : base(title) {
+            ColumnDefinition cd = new ColumnDefinition();
+            cd.Width = GridLength.Auto;
+            this.queryGrid.ColumnDefinitions.Add(cd);
+            this.queryGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            this.boxes = new QueryBox[prompts.Length];
+            for (int i = 0; i < prompts.Length; i++) {
+                RowDefinition rd = new RowDefinition();
+                rd.Height = GridLength.Auto;
+                this.queryGrid.RowDefinitions.Add(rd);
+                Label promptBox = new Label();
+                promptBox.Content = prompts[i].prompt;
+                Grid.SetRow(promptBox, i);
+                Grid.SetColumn(promptBox, 0);
+                this.queryGrid.Children.Add(promptBox);
+                this.boxes[i] = new QueryBox(prompts[i]);
+                Grid.SetRow(this.boxes[i].box, i);
+                Grid.SetColumn(this.boxes[i].box, 1);
+                this.queryGrid.Children.Add(this.boxes[i].box);
+            }
+            this.Loaded += this.onLoad;
+        }
 
         private void onLoad(object sender, RoutedEventArgs e) {
-            valBox.Focus();
+            if (boxes.Length <= 0) { return; }
+            boxes[0].box.Focus();
+        }
+
+        public object[] getValues() {
+            if (!this.valid) { return null; }
+            object[] values = new object[this.boxes.Length];
+            for (int i = 0; i < this.boxes.Length; i++) {
+                values[i] = this.boxes[i].getValue();
+            }
+            return values;
         }
     }
 
     static class SimpleDialog {
-        public static String askString(String title, String prompt, String value = "") {
-            StringDialogWindow dlg = new StringDialogWindow(title, prompt, value);
+        public static object[] askCompound(String title, QueryPrompt[] prompts, Window owner = null) {
+            QueryDialogWindow dlg = new QueryDialogWindow(title, prompts);
+            if (owner != null) {
+                dlg.Owner = owner;
+            }
             dlg.ShowDialog();
-            return dlg.value;
+            return dlg.getValues();
+        }
+
+        private static object askSingle(String title, QueryPrompt prompt, Window owner = null) {
+            object[] values = askCompound(title, new QueryPrompt[] { prompt }, owner);
+            if ((values != null) && (values.Length >= 0)) { return values[0]; }
+            return null;
+        }
+
+        private static object askSingle(String title, String prompt, QueryType type, object value = null, Window owner = null) {
+            return askSingle(title, new QueryPrompt(prompt, type, value), owner);
+        }
+
+        public static String askString(String title, String prompt, String value = "", Window owner = null) {
+            return (String)askSingle(title, prompt, QueryType.STRING, value, owner);
+        }
+
+        public static bool? askBool(String title, String prompt, bool value = false, Window owner = null) {
+            return (bool?)askSingle(title, prompt, QueryType.BOOL, value, owner);
+        }
+
+        public static int? askInt(String title, String prompt, int? value = null, Window owner = null) {
+            return (int?)((double?)askSingle(title, prompt, QueryType.INT, (double?)value, owner));
+        }
+
+        public static int? askInt(String title, String prompt, int? value = null, int min = int.MinValue, int max = int.MaxValue, int step = 1, Window owner = null) {
+            return (int?)((double?)askSingle(title, new QueryPrompt(prompt, QueryType.INT, value, min, max, step), owner));
+        }
+
+        public static double? askFloat(String title, String prompt, double? value = null, Window owner = null) {
+            return (double?)askSingle(title, prompt, QueryType.FLOAT, value, owner);
+        }
+
+        public static double? askFloat(String title, String prompt, int? value = null, int min = int.MinValue, int max = int.MaxValue, int step = 1, Window owner = null) {
+            return (double?)askSingle(title, new QueryPrompt(prompt, QueryType.FLOAT, value, min, max, step), owner);
+        }
+
+        public static String askList(String title, String prompt, String[] values, bool canEdit = false, String value = null, Window owner = null) {
+            return (String)askSingle(title, new QueryPrompt(prompt, QueryType.LIST, value, values: values, canEdit: canEdit), owner);
         }
     }
-
-#if false
-    //ideally, we can generalize StringDialogWindow to something like the following:
-    //(we're reading the input from a text box of some kind for everything but bool, so value could almost be a string regardless of type)
-
-    enum ValueType {
-        STRING,
-        BOOL,
-        INT,
-        FLOAT,
-        LIST
-    };
-
-    class Value {
-        public String prompt;
-        public ValueType type;
-        public double min = -Int32.MaxValue, max = Int32.MaxValue, step = 1;
-        public String[] options = {};
-        public bool readOnly = false;
-        private object value;
-
-        public Value(String prompt, ValueType type, object value = null) {
-            this.prompt = prompt;
-            this.type = type;
-            this.value = value;
-            if (value == null) {
-                switch (type) {
-                case ValueType.STRING:
-                case ValueType.LIST:
-                    this.value = "";
-                    break;
-                case ValueType.BOOL:
-                    this.value = false;
-                    break;
-                case ValueType.INT:
-                case ValueType.FLOAT:
-                    this.value = 0;
-                    break;
-                }
-            }
-        }
-
-        public Value(String prompt, ValueType type, double min = -Int32.MaxValue, double max = Int32.MaxValue, double step = 1, double value = 0) {
-            if ((type != ValueType.INT) && (type != ValueType.FLOAT)) {
-                throw new ArgumentException("The min, max, and step parameters are only valid for INT and FLOAT Values");
-            }
-            this.prompt = prompt;
-            this.type = type;
-            this.min = min;
-            this.max = max;
-            this.step = step;
-            this.value = value;
-        }
-
-        public Value(String prompt, ValueType type, String[] options, bool readOnly = false, String value = "") {
-            if (type != ValueType.LIST) {
-                throw new ArgumentException("The options and readOnly parameters are only valid for LIST Values");
-            }
-            this.prompt = prompt;
-            this.type = type;
-            this.options = options;
-            this.readOnly = readOnly;
-            this.value = value;
-        }
-
-        public String getString() {
-            if ((this.type != ValueType.STRING) && (this.type != ValueType.LIST)) {
-                throw new InvalidOperationException("The getString method is only valid for STRING and LIST Values");
-            }
-            return (String)(this.value);
-        }
-
-        public bool getBool() {
-            if (this.type != ValueType.BOOL) {
-                throw new InvalidOperationException("The getBool method is only valid for BOOL Values");
-            }
-            return (bool)(this.value);
-        }
-
-        public int getInt() {
-            if (this.type != ValueType.INT) {
-                throw new InvalidOperationException("The getInt method is only valid for INT Values");
-            }
-            return (int)(this.value);
-        }
-
-        public double getFloat() {
-            if (this.type != ValueType.FLOAT) {
-                throw new InvalidOperationException("The getFloat method is only valid for FLOAT Values");
-            }
-            return (double)(this.value);
-        }
-    }
-
-    class DialogWindow : Window {
-        public Value[] vals;
-
-        public DialogWindow(String title, Value[] vals) {
-            RowDefinition rd;
-            this.SizeToContent = SizeToContent.WidthAndHeight;
-            this.Title = title;
-            this.vals = vals;
-            Grid g = new Grid();
-            g.ColumnDefinitions.Add(new ColumnDefinition());
-            g.ColumnDefinitions.Add(new ColumnDefinition());
-            for (int i = 0; i < vals.Length; i++) {
-                rd = new RowDefinition();
-                rd.Height = GridLength.Auto;
-                g.RowDefinitions.Add(rd);
-                Label prompt = new Label();
-                prompt.Content = vals[i].prompt;
-                Grid.SetRow(prompt, i);
-                Grid.SetColumn(prompt, 0);
-                g.Children.Add(prompt);
-                //add input box
-            }
-            rd = new RowDefinition();
-            rd.Height = GridLength.Auto;
-            g.RowDefinitions.Add(rd);
-            Grid butGrid = new Grid();
-            butGrid.HorizontalAlignment = HorizontalAlignment.Right;
-            butGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            butGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            butGrid.RowDefinitions.Add(new RowDefinition());
-            Button okBut = new Button();
-            okBut.Content = "OK";
-            Grid.SetRow(okBut, 0);
-            Grid.SetColumn(okBut, 0);
-            butGrid.Children.Add(okBut);
-            Button cancelBut = new Button();
-            cancelBut.Content = "Cancel";
-            Grid.SetRow(cancelBut, 0);
-            Grid.SetColumn(cancelBut, 1);
-            butGrid.Children.Add(cancelBut);
-            Grid.SetRow(butGrid, vals.Length);
-            Grid.SetColumn(butGrid, 0);
-            Grid.SetColumnSpan(butGrid, 2);
-            g.Children.Add(butGrid);
-            this.Content = g;
-        }
-    }
-
-    static class SimpleDialog {
-        public static String askString(String title, String prompt, String value = "") {
-            Value[] vals = { new Value(prompt, ValueType.STRING, value) };
-            DialogWindow dlg = new DialogWindow(title, vals);
-            dlg.ShowDialog();
-            return vals[0].getString();
-        }
-    }
-#endif
 }

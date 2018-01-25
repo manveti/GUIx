@@ -193,6 +193,7 @@ namespace GUIx {
             case QueryType.INT:
                 if (prompt.min < int.MinValue) { prompt.min = int.MinValue; }
                 if (prompt.max > int.MaxValue) { prompt.max = int.MaxValue; }
+                if (prompt.value != null) { prompt.value = (double)((int)(prompt.value)); }
                 goto case QueryType.FLOAT; // numeric types use the same UI element; fall through to FLOAT
             case QueryType.FLOAT:
                 box = new SpinBox();
@@ -232,6 +233,7 @@ namespace GUIx {
             case QueryType.BOOL:
                 return ((CheckBox)box).IsChecked;
             case QueryType.INT:
+                return (int)(((SpinBox)box).Value);
             case QueryType.FLOAT:
                 return ((SpinBox)box).Value;
             case QueryType.LIST:
@@ -322,8 +324,8 @@ namespace GUIx {
         }
 
         private void onLoad(object sender, RoutedEventArgs e) {
-            if (boxes.Length <= 0) { return; }
-            boxes[0].box.Focus();
+            if (this.boxes.Length <= 0) { return; }
+            this.boxes[0].box.Focus();
         }
 
         public object[] getValues() {

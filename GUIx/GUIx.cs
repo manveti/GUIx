@@ -9,6 +9,13 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace GUIx {
+    public class Entry : TextBox {
+        protected override Size MeasureOverride(Size constraint) {
+            double extra = this.BorderThickness.Top + this.BorderThickness.Bottom + this.Padding.Top + this.Padding.Bottom;
+            return new Size(0, this.FontSize * this.FontFamily.LineSpacing * this.MinLines + extra);
+        }
+    }
+
     public class SpinBox : Grid {
         public readonly TextBox textBox;
         public readonly ScrollBar scrollBar;

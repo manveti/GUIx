@@ -1,15 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31025.194
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GUIx", "GUIx\GUIx.shproj", "{ED0A201F-AB06-4632-AF37-5EE0680B23FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUIx", "GUIx\GUIx.csproj", "{4D4280FB-2A74-4B73-B73F-A197EBEC024A}"
 EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		GUIx\GUIx.projitems*{ed0a201f-ab06-4632-af37-5ee0680b23fe}*SharedItemsImports = 13
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D4280FB-2A74-4B73-B73F-A197EBEC024A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D4280FB-2A74-4B73-B73F-A197EBEC024A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D4280FB-2A74-4B73-B73F-A197EBEC024A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D4280FB-2A74-4B73-B73F-A197EBEC024A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {543517F6-FC64-4E3C-A4B6-3265D56F068A}
 	EndGlobalSection
 EndGlobal

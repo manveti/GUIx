@@ -49,7 +49,7 @@ namespace GUIx {
             double newValue;
             if (this.textBox.Text == "-") { return; }
             if (!double.TryParse(this.textBox.Text, out newValue)) {
-                this.textBox.Text = "" + this.Value;
+                this.textBox.Text = (this.Value == 0 ? "0" : "" + this.Value);
                 return;
             }
             if (newValue == this.Value) { return; }
@@ -69,7 +69,7 @@ namespace GUIx {
         }
 
         public virtual void handleScroll(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            String newText = "" + this.Value;
+            String newText = (this.Value == 0 ? "0" : "" + this.Value);
             if (this.textBox.Text == newText) { return; }
             this.textBox.Text = newText;
         }

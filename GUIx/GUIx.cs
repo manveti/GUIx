@@ -45,7 +45,7 @@ namespace GUIx {
         }
 
         // handlers
-        public void handleTextChange(object sender, TextChangedEventArgs e) {
+        public virtual void handleTextChange(object sender, TextChangedEventArgs e) {
             double newValue;
             if (this.textBox.Text == "-") { return; }
             if (!double.TryParse(this.textBox.Text, out newValue)) {
@@ -56,7 +56,7 @@ namespace GUIx {
             this.Value = newValue;
         }
 
-        public void handleInput(object sender, TextCompositionEventArgs e) {
+        public virtual void handleInput(object sender, TextCompositionEventArgs e) {
             StringBuilder s = new StringBuilder(this.textBox.Text);
             s.Remove(this.textBox.SelectionStart, this.textBox.SelectionLength);
             s.Insert(this.textBox.SelectionStart, e.Text);
@@ -68,7 +68,7 @@ namespace GUIx {
             }
         }
 
-        public void handleScroll(object sender, RoutedPropertyChangedEventArgs<double> e) {
+        public virtual void handleScroll(object sender, RoutedPropertyChangedEventArgs<double> e) {
             String newText = "" + this.Value;
             if (this.textBox.Text == newText) { return; }
             this.textBox.Text = newText;
@@ -144,6 +144,80 @@ namespace GUIx {
         public event RoutedPropertyChangedEventHandler<double> ValueChanged {
             add { this.scrollBar.ValueChanged += value; }
             remove { this.scrollBar.ValueChanged -= value; }
+        }
+    }
+
+
+    public class TimePicker : SpinBox {
+        public TimePicker() : base() {
+            this.textBox.IsInactiveSelectionHighlightEnabled = true;
+            this.textBox.Text = new DateTime(0).ToString("hh:mm:ss tt");
+            this.textBox.SelectionChanged += this.handleSelectionChanged;
+            this.Minimum = 0;
+            this.Maximum = 24 * 60 * 60;
+        }
+
+        // handlers
+        public override void handleTextChange(object sender, TextChangedEventArgs e) {
+            DateTime newDateTime;
+            double newValue;
+            if (!DateTime.TryParse(this.textBox.Text, out newDateTime)) {
+                this.textBox.Text = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString("hh:mm:ss tt");
+                return;
+            }
+            newValue = newDateTime.TimeOfDay.TotalSeconds;
+            if (newValue == this.Value) { return; }
+            this.Value = newValue;
+        }
+
+        public override void handleInput(object sender, TextCompositionEventArgs e) {
+            StringBuilder s = new StringBuilder(this.textBox.Text);
+            s.Remove(this.textBox.SelectionStart, this.textBox.SelectionLength);
+            s.Insert(this.textBox.SelectionStart, e.Text);
+            DateTime newDateTime;
+            double newValue;
+            if (!DateTime.TryParse(s.ToString(), out newDateTime)) {
+                e.Handled = true;
+                return;
+            }
+            newValue = newDateTime.TimeOfDay.TotalSeconds;
+            if ((newValue < this.Minimum) || (newValue > this.Maximum)) {
+                e.Handled = true;
+                return;
+            }
+        }
+
+        public void handleSelectionChanged(object sender, RoutedEventArgs e) {
+            if (this.CaretIndex < 0) { return; }
+            if (this.CaretIndex <= 2) { this.SmallChange = 60 * 60; }
+            else if (this.CaretIndex <= 5) { this.SmallChange = 60; }
+            else if (this.CaretIndex <= 8) { this.SmallChange = 1; }
+            else if (this.CaretIndex > 9) { this.SmallChange = 12 * 60 * 60; }
+        }
+
+        public override void handleScroll(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            String newText = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString("hh:mm:ss tt");
+            if (this.textBox.Text == newText) { return; }
+            double smallChange = this.SmallChange;
+            this.textBox.Text = newText;
+            if (smallChange >= 12 * 60 * 60) {
+                this.CaretIndex = 11;
+                this.SelectionStart = 9;
+            }
+            else if (smallChange >= 60 * 60) {
+                this.CaretIndex = 2;
+                this.SelectionStart = 0;
+            }
+            else if (smallChange >= 60) {
+                this.CaretIndex = 5;
+                this.SelectionStart = 3;
+            }
+            else {
+                this.CaretIndex = 8;
+                this.SelectionStart = 6;
+            }
+            this.SelectionLength = 2;
+            this.SmallChange = smallChange;
         }
     }
 

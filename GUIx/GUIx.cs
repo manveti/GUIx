@@ -419,7 +419,7 @@ namespace GUIx {
         }
     }
 
-    static class SimpleDialog {
+    public static class SimpleDialog {
         public static object[] askCompound(String title, QueryPrompt[] prompts, Window owner = null) {
             QueryDialogWindow dlg = new QueryDialogWindow(title, prompts);
             if (owner != null) {

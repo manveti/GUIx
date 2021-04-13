@@ -19,6 +19,7 @@ namespace GUIx {
     public class SpinBox : Grid {
         public readonly TextBox textBox;
         public readonly ScrollBar scrollBar;
+        private double _smallChange;
 
         public SpinBox() {
             this.RowDefinitions.Add(new RowDefinition());
@@ -36,7 +37,8 @@ namespace GUIx {
             this.scrollBar = new ScrollBar();
             this.scrollBar.Minimum = double.MinValue;
             this.scrollBar.Maximum = double.MaxValue;
-            this.scrollBar.SmallChange = 1;
+            this._smallChange = 1;
+            this.scrollBar.SmallChange = this._smallChange;
             this.scrollBar.Value = 0;
             this.scrollBar.ValueChanged += this.handleScroll;
             Grid.SetRow(this.scrollBar, 0);
@@ -100,6 +102,15 @@ namespace GUIx {
             set { this.textBox.Text = value; }
         }
 
+        public bool IsReadOnly {
+            get { return this.textBox.IsReadOnly; }
+            set {
+                this.textBox.IsReadOnly = value;
+                if (value) { this.scrollBar.SmallChange = 0; }
+                else { this.scrollBar.SmallChange = this._smallChange; }
+            }
+        }
+
         public double Maximum {
             get { return -this.scrollBar.Minimum; }
             set { this.scrollBar.Minimum = -value; }
@@ -111,8 +122,11 @@ namespace GUIx {
         }
 
         public double SmallChange {
-            get { return this.scrollBar.SmallChange; }
-            set { this.scrollBar.SmallChange = value; }
+            get { return this._smallChange; }
+            set {
+                this._smallChange = value;
+                if (!this.IsReadOnly) { this.scrollBar.SmallChange = value; }
+            }
         }
 
         public double Value {

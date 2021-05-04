@@ -473,7 +473,7 @@ namespace GUIx {
             return (double?)askSingle(title, prompt, QueryType.FLOAT, value, owner);
         }
 
-        public static double? askFloat(String title, String prompt, int? value = null, int min = int.MinValue, int max = int.MaxValue, int step = 1, Window owner = null) {
+        public static double? askFloat(String title, String prompt, double? value = null, double min = double.MinValue, double max = double.MaxValue, double step = 1, Window owner = null) {
             return (double?)askSingle(title, new QueryPrompt(prompt, QueryType.FLOAT, value, min, max, step), owner);
         }
 

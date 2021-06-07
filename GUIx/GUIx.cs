@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -163,12 +160,23 @@ namespace GUIx {
 
 
     public class TimePicker : SpinBox {
+        private string pattern;
+
         public TimePicker() : base() {
+            this.pattern = "hh:mm:ss tt";
             this.textBox.IsInactiveSelectionHighlightEnabled = true;
-            this.textBox.Text = new DateTime(0).ToString("hh:mm:ss tt");
+            this.textBox.Text = new DateTime(0).ToString(this.pattern);
             this.textBox.SelectionChanged += this.handleSelectionChanged;
             this.Minimum = 0;
             this.Maximum = 24 * 60 * 60;
+        }
+
+        public string Pattern {
+            get => this.pattern;
+            set {
+                this.pattern = value;
+                this.textBox.Text = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString(this.pattern);
+            }
         }
 
         // handlers
@@ -176,7 +184,7 @@ namespace GUIx {
             DateTime newDateTime;
             double newValue;
             if (!DateTime.TryParse(this.textBox.Text, out newDateTime)) {
-                this.textBox.Text = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString("hh:mm:ss tt");
+                this.textBox.Text = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString(this.pattern);
                 return;
             }
             newValue = newDateTime.TimeOfDay.TotalSeconds;
@@ -210,7 +218,7 @@ namespace GUIx {
         }
 
         public override void handleScroll(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            String newText = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString("hh:mm:ss tt");
+            String newText = new DateTime(((long)(this.Value)) * TimeSpan.TicksPerSecond).ToString(this.pattern);
             if (this.textBox.Text == newText) { return; }
             double smallChange = this.SmallChange;
             this.textBox.Text = newText;
